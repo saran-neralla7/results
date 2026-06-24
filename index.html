@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Marks Gally Converter & Excel Exporter</title>
+  <link rel="stylesheet" href="styles.css">
+  <!-- SheetJS Library for Excel Import/Export -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body class="light-theme"> <!-- Light theme by default -->
+  <div class="app-container">
+    <!-- Header -->
+    <header>
+      <div class="logo-section">
+        <h1>
+          <svg class="icon logo-icon" viewBox="0 0 24 24">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+          Marks Gally Converter
+        </h1>
+        <p>Convert Oracle Reports Marks Gally HTML to Beautiful Sheets & Excel Downloads</p>
+      </div>
+      <div class="header-controls">
+        <button id="upload-another-btn" class="btn btn-secondary hidden" title="Upload a new file">
+          <svg class="icon" viewBox="0 0 24 24">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="17 8 12 3 7 8"></polyline>
+            <line x1="12" y1="3" x2="12" y2="15"></line>
+          </svg>
+          Upload New File
+        </button>
+        <button id="theme-toggle" class="btn-icon" title="Toggle Dark/Light Mode">
+          <!-- Moon Icon (shown in light mode by default) -->
+          <svg id="moon-icon" class="icon" viewBox="0 0 24 24">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+          <!-- Sun Icon (shown in dark mode) -->
+          <svg id="sun-icon" class="icon hidden" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- SCREEN 1: Upload Landing Screen (Visible by default) -->
+    <div id="upload-screen" class="screen-section">
+      <div class="landing-hero">
+        <h2>Process Your Examination Marks Gally</h2>
+        <p>Drop your Oracle Reports HTML file below to parse the tables into a clean interactive dashboard and download perfectly aligned Excel workbooks.</p>
+      </div>
+
+      <div id="drop-zone" class="upload-zone">
+        <input type="file" id="file-input" accept=".html,.htm">
+        <div class="upload-icon-container">
+          <svg class="icon upload-cloud-icon" viewBox="0 0 24 24">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="17 8 12 3 7 8"></polyline>
+            <line x1="12" y1="3" x2="12" y2="15"></line>
+          </svg>
+        </div>
+        <div class="upload-text">Upload Marks Gally File</div>
+        <div class="upload-subtext">Drag & drop your B 19 MKGLYgr.html file here, or click to browse</div>
+        <div class="upload-actions">
+          <button class="btn btn-primary" onclick="document.getElementById('file-input').click()">Select File</button>
+        </div>
+      </div>
+
+      <div class="demo-invite-card">
+        <div class="demo-card-body">
+          <svg class="icon demo-icon" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polygon points="10 8 16 12 10 16 10 8"></polygon>
+          </svg>
+          <div class="demo-text">
+            <h4>Want to see how it works?</h4>
+            <p>Load the sample marks gally report file to run a demonstration instantly.</p>
+          </div>
+          <button id="load-demo-btn" class="btn btn-secondary">Run Demo</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREEN 2: Dashboard Results Screen (Hidden by default) -->
+    <div id="dashboard-screen" class="screen-section hidden">
+      <!-- Statistics Panel -->
+      <div id="stats-panel" class="dashboard-stats">
+        <div class="stat-card">
+          <div class="stat-header">
+            <span>College Name</span>
+            <svg class="icon text-secondary" viewBox="0 0 24 24"><path d="M22 10v6M2 10l10-5 10 5-10 5z"></path><path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5"></path></svg>
+          </div>
+          <div id="stat-college" class="stat-value" style="font-size: 14px; font-weight: 600; min-height: 48px; display: flex; align-items: center; line-height: 1.4;">GVP College</div>
+          <div class="stat-footer">Gayatri Vidya Parishad</div>
+        </div>
+        
+        <div class="stat-card teal">
+          <div class="stat-header">
+            <span>Branch Group</span>
+            <svg class="icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+          </div>
+          <div id="stat-group" class="stat-value" style="font-size: 18px; font-weight: 600; min-height: 48px; display: flex; align-items: center;">B.Tech - M E</div>
+          <div class="stat-footer">Academic Course Group</div>
+        </div>
+        
+        <div class="stat-card success">
+          <div class="stat-header">
+            <span>Total Candidates</span>
+            <svg class="icon" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>
+          </div>
+          <div id="stat-total" class="stat-value">0</div>
+          <div id="stat-pass-rate" class="stat-footer">Pass Rate: 0%</div>
+        </div>
+        
+        <div class="stat-card warning">
+          <div class="stat-header">
+            <span>Average SGPA</span>
+            <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          </div>
+          <div id="stat-avg-sgpa" class="stat-value">0.00</div>
+          <div id="stat-max-sgpa" class="stat-footer">Max SGPA: 0.00</div>
+        </div>
+      </div>
+
+      <!-- Data Display & Exporter Workspace -->
+      <div id="workspace" class="data-section">
+        <!-- Tabs & Exporters Toolbar -->
+        <div class="tabs-bar">
+          <div class="tabs-list">
+            <button id="tab-original" class="tab-btn active" data-tab="original">
+              Original Report Layout
+            </button>
+            <button id="tab-structured" class="tab-btn" data-tab="structured">
+              Cleaned Data Table
+            </button>
+          </div>
+          <div class="action-bar">
+            <div class="select-wrapper">
+              <span class="select-label">Data Columns:</span>
+              <select id="export-scope-select" class="btn-select">
+                <option value="all">Everything (Grade, Points, Credits)</option>
+                <option value="grades-only">Grades Only (Exclude Points & Credits)</option>
+              </select>
+            </div>
+            <button id="download-exact-btn" class="btn btn-success">
+              <svg class="icon" viewBox="0 0 24 24">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              Excel (Exact Layout)
+            </button>
+            <button id="download-clean-btn" class="btn btn-primary">
+              <svg class="icon" viewBox="0 0 24 24">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              Excel (Clean Table)
+            </button>
+          </div>
+        </div>
+
+        <!-- Table Viewport -->
+        <div class="table-viewport">
+          <div class="loading-overlay" id="loading-spinner">
+            <div class="spinner"></div>
+          </div>
+
+          <!-- Original View Container -->
+          <div id="view-original" class="tab-content original-table-container">
+            <!-- Dynamically populated Oracle Report -->
+          </div>
+
+          <!-- Structured View Container -->
+          <div id="view-structured" class="tab-content hidden">
+            <table class="structured-table">
+              <thead>
+                <tr id="structured-headers">
+                  <!-- Dynamically populated structured columns -->
+                </tr>
+              </thead>
+              <tbody id="structured-body">
+                <!-- Dynamically populated student rows -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CUSTOM DIALOG MODAL (Successful Upload Popup) -->
+    <div id="success-modal" class="modal-overlay hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <div class="success-icon-wrapper">
+            <svg class="icon success-icon" viewBox="0 0 24 24">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+              <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+          </div>
+          <h3>Upload Successful</h3>
+        </div>
+        <div class="modal-body">
+          <p id="modal-success-desc">Your file has been processed successfully. We parsed 1 student record.</p>
+          <div class="parsed-preview-box">
+            <div class="preview-item">
+              <span class="label">College:</span>
+              <span id="preview-college" class="value">GVP College</span>
+            </div>
+            <div class="preview-item">
+              <span class="label">Branch Group:</span>
+              <span id="preview-group" class="value">B.Tech - ME</span>
+            </div>
+            <div class="preview-item">
+              <span class="label">Subjects Detected:</span>
+              <span id="preview-subjects" class="value">PHY</span>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="modal-view-report-btn" class="btn btn-primary btn-block">View Report & Export Excel</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
