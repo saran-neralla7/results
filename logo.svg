@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366f1" />
+      <stop offset="100%" stop-color="#14b8a6" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="6" flood-color="#0f172a" flood-opacity="0.15" />
+    </filter>
+  </defs>
+  <!-- Background Circle -->
+  <circle cx="256" cy="256" r="240" fill="url(#grad)" />
+  <!-- Card White Overlay -->
+  <g filter="url(#shadow)">
+    <rect x="128" y="128" width="256" height="288" rx="24" fill="#ffffff" />
+  </g>
+  <!-- Document Lines -->
+  <rect x="176" y="272" width="160" height="16" rx="8" fill="#cbd5e1" />
+  <rect x="176" y="312" width="160" height="16" rx="8" fill="#cbd5e1" />
+  <rect x="176" y="352" width="112" height="16" rx="8" fill="#cbd5e1" />
+  <!-- Academic Cap (GVP theme) -->
+  <path d="M256 168 L320 200 L256 232 L192 200 Z" fill="url(#grad)" />
+  <path d="M208 208 L208 240 C208 256, 304 256, 304 240 L304 208" fill="url(#grad)" opacity="0.9" />
+  <path d="M320 200 L328 248 L320 252 Z" fill="#f59e0b" /> <!-- Tassel -->
+  <circle cx="320" cy="254" r="5" fill="#f59e0b" />
+</svg>

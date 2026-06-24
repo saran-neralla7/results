@@ -1,0 +1,18 @@
+{
+  "short_name": "Marks Gally",
+  "name": "Marks Gally Converter & Exporter",
+  "description": "Convert Oracle Reports Marks Gally HTML to Clean Sheets & Excel Downloads",
+  "icons": [
+    {
+      "src": "logo.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "./index.html",
+  "background_color": "#f8fafc",
+  "theme_color": "#4f46e5",
+  "display": "standalone",
+  "orientation": "any"
+}
