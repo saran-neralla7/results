@@ -616,21 +616,52 @@ document.addEventListener('DOMContentLoaded', () => {
         let cgpa = "0.00";
         let status = "PASS";
 
-        for (let c = sgpaColStart - 1; c <= sgpaColEnd + 2; c++) {
+        // Parse SGPA: try exact column first, allowing integers and decimals
+        let foundSgpa = false;
+        for (let c = sgpaColStart; c <= sgpaColEnd; c++) {
           if (c >= 0 && c < numCols && grid[r][c] && grid[r][c].isOrigin) {
-            const txt = grid[r][c].text;
-            if (/^\d\.\d{2}$/.test(txt) || /^\d+\.\d+$/.test(txt)) {
+            const txt = grid[r][c].text.trim();
+            if (/^\d+(\.\d+)?$/.test(txt)) {
               sgpa = txt;
+              foundSgpa = true;
               break;
             }
           }
         }
+        // Fallback: search adjacent columns
+        if (!foundSgpa) {
+          for (let c = sgpaColStart - 1; c <= sgpaColEnd + 2; c++) {
+            if (c >= 0 && c < numCols && grid[r][c] && grid[r][c].isOrigin) {
+              const txt = grid[r][c].text.trim();
+              if (/^\d+(\.\d+)?$/.test(txt)) {
+                sgpa = txt;
+                break;
+              }
+            }
+          }
+        }
 
-        for (let c = cgpaColStart - 1; c <= cgpaColEnd + 2; c++) {
+        // Parse CGPA: try exact column first, allowing integers and decimals
+        let foundCgpa = false;
+        for (let c = cgpaColStart; c <= cgpaColEnd; c++) {
           if (c >= 0 && c < numCols && grid[r][c] && grid[r][c].isOrigin) {
-            const txt = grid[r][c].text;
-            if (/^\d\.\d{2}$/.test(txt) || /^\d+\.\d+$/.test(txt)) {
+            const txt = grid[r][c].text.trim();
+            if (/^\d+(\.\d+)?$/.test(txt)) {
               cgpa = txt;
+              foundCgpa = true;
+              break;
+            }
+          }
+        }
+        // Fallback: search adjacent columns
+        if (!foundCgpa) {
+          for (let c = cgpaColStart - 1; c <= cgpaColEnd + 2; c++) {
+            if (c >= 0 && c < numCols && grid[r][c] && grid[r][c].isOrigin) {
+              const txt = grid[r][c].text.trim();
+              if (/^\d+(\.\d+)?$/.test(txt)) {
+                cgpa = txt;
+                break;
+              }
             }
           }
         }
