@@ -40,6 +40,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const downloadCleanBtn = document.getElementById('download-clean-btn');
   const exportScopeSelect = document.getElementById('export-scope-select');
   
+  // Analytics Elements
+  const tabAnalytics = document.getElementById('tab-analytics');
+  const viewAnalytics = document.getElementById('view-analytics');
+  const analyticsCollege = document.getElementById('analytics-college');
+  const analyticsGroup = document.getElementById('analytics-group');
+  const analyticsSummaryTotal = document.getElementById('analytics-summary-total');
+  const analyticsSummaryPassed = document.getElementById('analytics-summary-passed');
+  const analyticsSummaryFailed = document.getElementById('analytics-summary-failed');
+  const analyticsSummaryPercent = document.getElementById('analytics-summary-percent');
+  const analyticsTableBody = document.getElementById('analytics-table-body');
+  const printAnalyticsBtn = document.getElementById('print-analytics-btn');
+  
   // Stats Elements
   const statCollege = document.getElementById('stat-college');
   const statGroup = document.getElementById('stat-group');
@@ -130,22 +142,34 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Tab switching
-  [tabOriginal, tabStructured].forEach(tabBtn => {
+  [tabOriginal, tabStructured, tabAnalytics].forEach(tabBtn => {
     tabBtn.addEventListener('click', () => {
       const activeTab = tabBtn.getAttribute('data-tab');
       
       tabOriginal.classList.remove('active');
       tabStructured.classList.remove('active');
+      tabAnalytics.classList.remove('active');
       tabBtn.classList.add('active');
       
       if (activeTab === 'original') {
         viewOriginal.classList.remove('hidden');
         viewStructured.classList.add('hidden');
-      } else {
+        viewAnalytics.classList.add('hidden');
+      } else if (activeTab === 'structured') {
         viewOriginal.classList.add('hidden');
         viewStructured.classList.remove('hidden');
+        viewAnalytics.classList.add('hidden');
+      } else {
+        viewOriginal.classList.add('hidden');
+        viewStructured.classList.add('hidden');
+        viewAnalytics.classList.remove('hidden');
       }
     });
+  });
+
+  // Print PDF Event Listener
+  printAnalyticsBtn.addEventListener('click', () => {
+    window.print();
   });
 
   // Export Scope Selector Event Listener
@@ -212,9 +236,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // 4. Update stats cards
       updateStats(reportMetadata);
-
+ 
       // 5. Render structured table
       renderStructuredTable(reportMetadata);
+ 
+      // 5b. Render analytics table
+      renderAnalytics(reportMetadata);
 
       // 6. Populate Success Modal Details
       const studentCount = reportMetadata.students.length;
@@ -741,7 +768,60 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error(err);
       alert("Failed to export clean Excel: " + err.message);
     }
-});
+  });
+
+  // Render Subject-Wise Results Analytics
+  function renderAnalytics(data) {
+    // Populate header details
+    analyticsCollege.textContent = data.collegeName;
+    analyticsGroup.textContent = "Branch / Course Group: " + data.groupName;
+
+    // Overall Summary Calculations
+    const totalStudents = data.students.length;
+    const totalPassed = data.students.filter(s => s.status.toUpperCase() === "PASS").length;
+    const totalFailed = totalStudents - totalPassed;
+    const overallPercent = totalStudents > 0 ? ((totalPassed / totalStudents) * 100).toFixed(1) + "%" : "0.0%";
+
+    analyticsSummaryTotal.textContent = totalStudents;
+    analyticsSummaryPassed.textContent = totalPassed;
+    analyticsSummaryFailed.textContent = totalFailed;
+    analyticsSummaryPercent.textContent = overallPercent;
+
+    // Subject-Wise Analysis Calculations
+    let tableHtml = "";
+    data.subjects.forEach(subj => {
+      let registered = 0;
+      let passed = 0;
+      let failed = 0;
+
+      data.students.forEach(student => {
+        const detail = student.subjects[subj.name];
+        if (detail && detail.grade !== "-") {
+          registered++;
+          const grade = detail.grade.toUpperCase();
+          if (grade !== "F" && grade !== "AB" && grade !== "Ab") {
+            passed++;
+          } else {
+            failed++;
+          }
+        }
+      });
+
+      const passPercent = registered > 0 ? ((passed / registered) * 100).toFixed(1) + "%" : "0.0%";
+
+      tableHtml += `
+        <tr>
+          <td style="font-weight: 600; color: var(--text-primary);">${subj.name}</td>
+          <td style="text-align: center; font-weight: 500;">${registered}</td>
+          <td style="text-align: center; font-weight: 600; color: var(--success);">${passed}</td>
+          <td style="text-align: center; font-weight: 600; color: ${failed > 0 ? 'var(--danger)' : 'var(--text-secondary)'};">${failed}</td>
+          <td style="text-align: center; font-weight: 700; color: var(--primary);">${passPercent}</td>
+        </tr>
+      `;
+    });
+
+    analyticsTableBody.innerHTML = tableHtml;
+  }
 
 // PWA Service Worker Registration
 if ('serviceWorker' in navigator) {
