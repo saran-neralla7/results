@@ -72,7 +72,7 @@
       </div>
 
       <div id="drop-zone" class="upload-zone">
-        <input type="file" id="file-input" accept=".html,.htm">
+        <input type="file" id="file-input" accept=".html,.htm" multiple>
         <div class="upload-icon-container">
           <svg class="icon upload-cloud-icon" viewBox="0 0 24 24">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -104,6 +104,16 @@
 
     <!-- SCREEN 2: Dashboard Results Screen (Hidden by default) -->
     <div id="dashboard-screen" class="screen-section hidden">
+      <!-- File Selector for Batch Processing -->
+      <div id="file-selector-container" class="file-selector-card hidden">
+        <label for="active-file-select" class="selector-label">Currently Viewing File:</label>
+        <div class="select-wrapper" style="box-shadow: none; height: 32px; padding: 0 10px;">
+          <select id="active-file-select" class="btn-select file-select" style="font-size: 12px;">
+            <!-- Dynamically populated when multiple files are uploaded -->
+          </select>
+        </div>
+      </div>
+
       <!-- Statistics Panel -->
       <div id="stats-panel" class="dashboard-stats">
         <div class="stat-card">
@@ -157,6 +167,9 @@
             <button id="tab-analytics" class="tab-btn" data-tab="analytics">
               Analytics Dashboard
             </button>
+            <button id="tab-memos" class="tab-btn" data-tab="memos">
+              Student Report Cards
+            </button>
           </div>
           <div class="action-bar">
             <div class="select-wrapper">
@@ -198,6 +211,27 @@
 
           <!-- Structured View Container -->
           <div id="view-structured" class="tab-content hidden">
+            <!-- Table Controls: Search Bar & Filters -->
+            <div class="table-controls-bar">
+              <div class="search-box-wrapper">
+                <svg class="icon search-icon" viewBox="0 0 24 24" style="width: 16px; height: 16px; color: var(--text-secondary);">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input type="text" id="student-search-input" placeholder="Search student name or roll number...">
+              </div>
+              <div class="filter-box-wrapper">
+                <span class="filter-label">Status Filter:</span>
+                <div class="select-wrapper" style="box-shadow: none; height: 32px; padding: 0 10px;">
+                  <select id="status-filter-select" class="btn-select" style="font-size: 12px; font-weight: 500; padding: 0;">
+                    <option value="all">Show All Candidates</option>
+                    <option value="pass">Passed Only</option>
+                    <option value="fail">Failed / Absent Only</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
             <table class="structured-table">
               <thead>
                 <tr id="structured-headers">
@@ -262,6 +296,51 @@
                   </svg>
                   Print / Save as PDF
                 </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Student Report Cards View Container -->
+          <div id="view-memos" class="tab-content hidden">
+            <div class="memos-workspace">
+              <!-- Left Sidebar: Search & Student list -->
+              <div class="memos-sidebar">
+                <div class="sidebar-search-box">
+                  <svg class="icon search-icon" viewBox="0 0 24 24">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                  </svg>
+                  <input type="text" id="memo-search-input" placeholder="Search student name or roll...">
+                </div>
+                <div id="memo-student-list" class="memo-student-list">
+                  <!-- Dynamically populated list of students -->
+                </div>
+              </div>
+              
+              <!-- Right Preview Panel: The Grade Card itself -->
+              <div class="memo-preview-panel">
+                <div class="memo-actions-bar">
+                  <button id="print-memo-btn" class="btn btn-success">
+                    <svg class="icon" viewBox="0 0 24 24">
+                      <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                      <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                      <rect x="6" y="14" width="12" height="8"></rect>
+                    </svg>
+                    Print Memo / Save PDF
+                  </button>
+                </div>
+                
+                <div id="memo-grade-card-container">
+                  <!-- Dynamically populated Grade Card -->
+                  <div class="empty-state">
+                    <svg class="icon empty-state-icon" viewBox="0 0 24 24">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                      <polyline points="14 2 14 8 20 8"></polyline>
+                    </svg>
+                    <h4>No Student Selected</h4>
+                    <p>Select a student from the sidebar list or search above to load and print their Grade Memorandum.</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
