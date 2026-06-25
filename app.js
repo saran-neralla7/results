@@ -228,6 +228,70 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Parse complete report (supporting multi-page Oracle Reports with multiple tables)
+  function parseReportFromHtml(htmlText) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlText, 'text/html');
+    const sourceTables = Array.from(doc.querySelectorAll('table'));
+    
+    if (sourceTables.length === 0) {
+      throw new Error("Could not find any table elements inside the report.");
+    }
+    
+    let collegeName = "GAYATRI VIDYA PARISHAD COLLEGE";
+    let groupName = "";
+    const subjects = [];
+    const students = [];
+    const htmlParts = [];
+    
+    sourceTables.forEach((tableEl, tblIdx) => {
+      const grid = buildGridFromTable(tableEl);
+      if (grid.length > 0) {
+        const metadata = extractData(grid);
+        
+        // Only merge if the table contains student records (ignores signature-only tables)
+        if (metadata.students.length > 0) {
+          if (!collegeName || collegeName === "GAYATRI VIDYA PARISHAD COLLEGE") {
+            if (metadata.collegeName) collegeName = metadata.collegeName;
+          }
+          if (!groupName) {
+            if (metadata.groupName) groupName = metadata.groupName;
+          }
+          
+          // Merge subjects (uniquely by name)
+          metadata.subjects.forEach(sub => {
+            if (!subjects.some(existingSub => existingSub.name === sub.name)) {
+              subjects.push(sub);
+            }
+          });
+          
+          // Merge students (uniquely by regdNo)
+          metadata.students.forEach(stud => {
+            if (!students.some(existingStud => existingStud.regdNo === stud.regdNo)) {
+              students.push(stud);
+            }
+          });
+        }
+        
+        // Save HTML for original view
+        tableEl.classList.add('oracle-report-table');
+        htmlParts.push(tableEl.outerHTML);
+      }
+    });
+    
+    if (students.length === 0) {
+      throw new Error("No student records could be parsed from the file.");
+    }
+    
+    return {
+      collegeName: collegeName,
+      groupName: groupName || "B.Tech",
+      subjects: subjects,
+      students: students,
+      html: htmlParts.join('<div class="page-separator"><hr size="5" noshade></div>')
+    };
+  }
+
   // Read and parse multiple files sequentially (Batch Processing)
   function handleFiles(filesList) {
     showLoading(true);
@@ -253,22 +317,7 @@ document.addEventListener('DOMContentLoaded', () => {
       reader.onload = (e) => {
         const htmlText = e.target.result;
         try {
-          const parser = new DOMParser();
-          const doc = parser.parseFromString(htmlText, 'text/html');
-          const sourceTable = doc.querySelector('table');
-          
-          if (!sourceTable) {
-            throw new Error("Could not find table element inside the report.");
-          }
-          
-          sourceTable.classList.add('oracle-report-table');
-          const grid = buildGridFromTable(sourceTable);
-          
-          if (grid.length === 0) {
-            throw new Error("Report table is empty.");
-          }
-          
-          const reportMetadata = extractData(grid);
+          const reportMetadata = parseReportFromHtml(htmlText);
           
           // Shorten filename to 30 characters for Excel sheet name limit (31 chars)
           const sheetName = filename.replace(/[\\\/\?\*\[\]]/g, "").substring(0, 30) || `Sheet ${index + 1}`;
@@ -280,7 +329,7 @@ document.addEventListener('DOMContentLoaded', () => {
             groupName: reportMetadata.groupName,
             subjects: reportMetadata.subjects,
             students: reportMetadata.students,
-            html: sourceTable.outerHTML
+            html: reportMetadata.html
           });
         } catch (err) {
           console.error(err);
@@ -307,12 +356,7 @@ document.addEventListener('DOMContentLoaded', () => {
     demoFile.text().then(htmlText => {
       try {
         reports = [];
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(htmlText, 'text/html');
-        const sourceTable = doc.querySelector('table');
-        sourceTable.classList.add('oracle-report-table');
-        const grid = buildGridFromTable(sourceTable);
-        const reportMetadata = extractData(grid);
+        const reportMetadata = parseReportFromHtml(htmlText);
         
         reports.push({
           filename: "B 19 MKGLYgr",
@@ -321,7 +365,7 @@ document.addEventListener('DOMContentLoaded', () => {
           groupName: reportMetadata.groupName,
           subjects: reportMetadata.subjects,
           students: reportMetadata.students,
-          html: sourceTable.outerHTML
+          html: reportMetadata.html
         });
         
         setupDashboard();
@@ -513,6 +557,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (headerRowIdx !== -1) break;
       }
+    }
+
+    if (headerRowIdx === -1) {
+      return {
+        collegeName: collegeName,
+        groupName: groupName,
+        subjects: [],
+        students: []
+      };
     }
 
     let regdNoColStart = 4;

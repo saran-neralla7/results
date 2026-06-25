@@ -542,6 +542,38 @@ header {
   margin: 4px 0;
 }
 
+.page-separator {
+  margin: 40px 0;
+  position: relative;
+  text-align: center;
+}
+
+.page-separator hr {
+  border: 0;
+  height: 4px;
+  background-color: var(--border-color);
+  border-radius: 2px;
+  margin: 0;
+}
+
+.page-separator::after {
+  content: 'PAGE BREAK';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: var(--bg-app);
+  color: var(--text-muted);
+  font-family: var(--font-heading);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  padding: 4px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border-color);
+  transition: background-color var(--transition-normal), border-color var(--transition-normal);
+}
+
 /* Cleaned/Structured Table Styles */
 .structured-table {
   width: 100%;
