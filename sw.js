@@ -1,4 +1,4 @@
-const CACHE_NAME = 'gvp-marks-cache-v1';
+const CACHE_NAME = 'gvp-marks-cache-v2';
 const ASSETS_TO_CACHE = [
   './',
   'index.html',
@@ -37,24 +37,58 @@ self.addEventListener('activate', (e) => {
   );
 });
 
-// Fetch Event - Cache First Strategy
+// Fetch Event - Network First for local assets, Cache First for external CDN dependencies
 self.addEventListener('fetch', (e) => {
-  e.respondWith(
-    caches.match(e.request)
-      .then((cachedResponse) => {
-        if (cachedResponse) {
-          return cachedResponse;
-        }
-        // Fallback to network
-        return fetch(e.request).then((networkResponse) => {
-          // If it's a valid response, we can dynamically cache it (optional)
-          return networkResponse;
-        });
-      }).catch(() => {
-        // Offline fallback if network fails
-        if (e.request.url.includes('.html')) {
-          return caches.match('index.html');
-        }
-      })
-  );
+  // Only handle GET requests
+  if (e.request.method !== 'GET') return;
+
+  const isLocal = e.request.url.startsWith(self.location.origin);
+
+  if (isLocal) {
+    // Network First strategy: always try network first to get latest updates, fallback to cache if offline
+    e.respondWith(
+      fetch(e.request)
+        .then((response) => {
+          // If valid response, clone and update cache
+          if (response && response.status === 200) {
+            const responseClone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(e.request, responseClone);
+            });
+          }
+          return response;
+        })
+        .catch(() => {
+          // If network fails (offline), load from cache
+          return caches.match(e.request).then((cachedResponse) => {
+            if (cachedResponse) {
+              return cachedResponse;
+            }
+            // Offline fallback for index.html
+            if (e.request.url.includes('.html') || e.request.url === self.location.origin || e.request.url === self.location.origin + '/') {
+              return caches.match('index.html');
+            }
+          });
+        })
+    );
+  } else {
+    // Cache First strategy for CDN dependencies (like SheetJS xlsx library)
+    e.respondWith(
+      caches.match(e.request)
+        .then((cachedResponse) => {
+          if (cachedResponse) {
+            return cachedResponse;
+          }
+          return fetch(e.request).then((response) => {
+            if (response && response.status === 200) {
+              const responseClone = response.clone();
+              caches.open(CACHE_NAME).then((cache) => {
+                cache.put(e.request, responseClone);
+              });
+            }
+            return response;
+          });
+        })
+    );
+  }
 });
