@@ -792,6 +792,7 @@ document.addEventListener('DOMContentLoaded', () => {
           regdNo: regdNo,
           name: studentName,
           gender: gender,
+          branch: groupName,
           subjects: subjectDetails,
           sgpa: sgpa,
           cgpa: cgpa,
@@ -840,6 +841,7 @@ document.addEventListener('DOMContentLoaded', () => {
       <th>Register No</th>
       <th>Student Name</th>
       <th>Gender</th>
+      <th>Branch</th>
     `;
 
     report.subjects.forEach(subj => {
@@ -868,6 +870,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <td style="font-weight: 600;">${student.regdNo}</td>
         <td style="font-weight: 500;">${student.name}</td>
         <td><span class="badge badge-info">${student.gender}</span></td>
+        <td style="font-size: 12px; font-weight: 500; color: var(--text-secondary);">${student.branch || report.groupName}</td>
       `;
 
       report.subjects.forEach(subj => {
@@ -1027,7 +1030,8 @@ document.addEventListener('DOMContentLoaded', () => {
           const row = {
             "Register No": student.regdNo,
             "Student Name": student.name,
-            "Gender": student.gender
+            "Gender": student.gender,
+            "Branch": student.branch || report.groupName
           };
 
           report.subjects.forEach(subj => {
@@ -1249,7 +1253,7 @@ document.addEventListener('DOMContentLoaded', () => {
           </div>
           <div class="info-row">
             <span class="label">Course & Branch:</span>
-            <span class="value">${report.groupName}</span>
+            <span class="value">${student.branch || report.groupName}</span>
           </div>
           <div class="info-row">
             <span class="label">Gender:</span>
