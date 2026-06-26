@@ -232,72 +232,22 @@
               </div>
             </div>
 
-            <table class="structured-table">
-              <thead>
-                <tr id="structured-headers">
-                  <!-- Dynamically populated structured columns -->
-                </tr>
-              </thead>
-              <tbody id="structured-body">
-                <!-- Dynamically populated student rows -->
-              </tbody>
-            </table>
+            <div id="structured-tables-container"></div>
           </div>
 
           <!-- Analytics View Container -->
           <div id="view-analytics" class="tab-content hidden">
-            <div class="analytics-card">
-              <div class="analytics-print-header">
-                <h2 id="analytics-college">GAYATRI VIDYA PARISHAD COLLEGE</h2>
-                <h3>Subject-Wise Results Analysis</h3>
-                <p id="analytics-group">Branch: B.Tech - M E</p>
-              </div>
-              
-              <div class="analytics-grid">
-                <div class="analytics-summary-item">
-                  <span class="label">Total Students</span>
-                  <span id="analytics-summary-total" class="value">0</span>
-                </div>
-                <div class="analytics-summary-item success">
-                  <span class="label">Total Passed</span>
-                  <span id="analytics-summary-passed" class="value">0</span>
-                </div>
-                <div class="analytics-summary-item danger">
-                  <span class="label">Total Failed</span>
-                  <span id="analytics-summary-failed" class="value">0</span>
-                </div>
-                <div class="analytics-summary-item teal">
-                  <span class="label">Overall Pass %</span>
-                  <span id="analytics-summary-percent" class="value">0%</span>
-                </div>
-              </div>
-
-              <table class="analytics-table">
-                <thead>
-                  <tr>
-                    <th>Subject Name</th>
-                    <th>Candidates Registered</th>
-                    <th>Passed</th>
-                    <th>Failed / Absent</th>
-                    <th>Pass Percentage</th>
-                  </tr>
-                </thead>
-                <tbody id="analytics-table-body">
-                  <!-- Dynamically populated -->
-                </tbody>
-              </table>
-              
-              <div class="print-btn-container">
-                <button id="print-analytics-btn" class="btn btn-success">
-                  <svg class="icon" viewBox="0 0 24 24">
-                    <polyline points="6 9 6 2 18 2 18 9"></polyline>
-                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
-                    <rect x="6" y="14" width="12" height="8"></rect>
-                  </svg>
-                  Print / Save as PDF
-                </button>
-              </div>
+            <div class="print-btn-container" style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
+              <button id="print-analytics-btn" class="btn btn-success">
+                <svg class="icon" viewBox="0 0 24 24">
+                  <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                  <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                  <rect x="6" y="14" width="12" height="8"></rect>
+                </svg>
+                Print All Analytics / Save PDF
+              </button>
             </div>
+            <div id="analytics-container"></div>
           </div>
 
           <!-- Student Report Cards View Container -->

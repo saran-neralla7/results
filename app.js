@@ -33,8 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
   
   const viewOriginal = document.getElementById('view-original');
   const viewStructured = document.getElementById('view-structured');
-  const structuredHeaders = document.getElementById('structured-headers');
-  const structuredBody = document.getElementById('structured-body');
+  const structuredTablesContainer = document.getElementById('structured-tables-container');
   
   const tabOriginal = document.getElementById('tab-original');
   const tabStructured = document.getElementById('tab-structured');
@@ -72,13 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const modalViewReportBtn = document.getElementById('modal-view-report-btn');
 
   // Analytics Elements
-  const analyticsCollege = document.getElementById('analytics-college');
-  const analyticsGroup = document.getElementById('analytics-group');
-  const analyticsSummaryTotal = document.getElementById('analytics-summary-total');
-  const analyticsSummaryPassed = document.getElementById('analytics-summary-passed');
-  const analyticsSummaryFailed = document.getElementById('analytics-summary-failed');
-  const analyticsSummaryPercent = document.getElementById('analytics-summary-percent');
-  const analyticsTableBody = document.getElementById('analytics-table-body');
+  const analyticsContainer = document.getElementById('analytics-container');
   const printAnalyticsBtn = document.getElementById('print-analytics-btn');
 
   // State (Batch Processing)
@@ -242,6 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let groupName = "";
     const subjects = [];
     const students = [];
+    const pages = [];
     const htmlParts = [];
     
     sourceTables.forEach((tableEl, tblIdx) => {
@@ -250,7 +244,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const metadata = extractData(grid);
         
         // Only merge if the table contains student records (ignores signature-only tables)
-        if (metadata.students.length > 0) {
+        if (metadata && metadata.students && metadata.students.length > 0) {
           if (!collegeName || collegeName === "GAYATRI VIDYA PARISHAD COLLEGE") {
             if (metadata.collegeName) collegeName = metadata.collegeName;
           }
@@ -271,6 +265,20 @@ document.addEventListener('DOMContentLoaded', () => {
               students.push(stud);
             }
           });
+
+          // Extract page number from text inside tableEl
+          let pageNo = pages.length + 1;
+          const pageMatch = tableEl.textContent.match(/Page\s*No\s*:\s*(\d+)/i);
+          if (pageMatch) {
+            pageNo = parseInt(pageMatch[1], 10);
+          }
+
+          pages.push({
+            pageNo: pageNo,
+            groupName: metadata.groupName || groupName || "B.Tech",
+            subjects: metadata.subjects,
+            students: metadata.students
+          });
         }
         
         // Save HTML for original view
@@ -288,6 +296,7 @@ document.addEventListener('DOMContentLoaded', () => {
       groupName: groupName || "B.Tech",
       subjects: subjects,
       students: students,
+      pages: pages,
       html: htmlParts.join('<div class="page-separator"><hr size="5" noshade></div>')
     };
   }
@@ -329,6 +338,7 @@ document.addEventListener('DOMContentLoaded', () => {
             groupName: reportMetadata.groupName,
             subjects: reportMetadata.subjects,
             students: reportMetadata.students,
+            pages: reportMetadata.pages,
             html: reportMetadata.html
           });
         } catch (err) {
@@ -365,6 +375,7 @@ document.addEventListener('DOMContentLoaded', () => {
           groupName: reportMetadata.groupName,
           subjects: reportMetadata.subjects,
           students: reportMetadata.students,
+          pages: reportMetadata.pages,
           html: reportMetadata.html
         });
         
@@ -836,104 +847,144 @@ document.addEventListener('DOMContentLoaded', () => {
   // Render Cleaned Data Table
   function renderStructuredTable(report) {
     const scope = exportScopeSelect.value;
+    let tablesHtml = "";
     
-    let headerHtml = `
-      <th>Register No</th>
-      <th>Student Name</th>
-      <th>Gender</th>
-      <th>Branch</th>
-    `;
-
-    report.subjects.forEach(subj => {
-      headerHtml += `
-        <th>${subj.name} Grade</th>
+    report.pages.forEach((page, pageIdx) => {
+      let pageHeaderCols = `
+        <th>Register No</th>
+        <th>Student Name</th>
+        <th>Gender</th>
+        <th>Branch</th>
       `;
-      if (scope !== 'grades-only') {
-        headerHtml += `
-          <th>${subj.name} Points</th>
-          <th>${subj.name} Credits</th>
-        `;
-      }
-    });
-
-    headerHtml += `
-      <th>SGPA</th>
-      <th>CGPA</th>
-      <th>Status</th>
-      <th>Actions</th>
-    `;
-    structuredHeaders.innerHTML = headerHtml;
-
-    let bodyHtml = "";
-    report.students.forEach(student => {
-      let rowHtml = `
-        <td style="font-weight: 600;">${student.regdNo}</td>
-        <td style="font-weight: 500;">${student.name}</td>
-        <td><span class="badge badge-info">${student.gender}</span></td>
-        <td style="font-size: 12px; font-weight: 500; color: var(--text-secondary);">${student.branch || report.groupName}</td>
-      `;
-
-      report.subjects.forEach(subj => {
-        const details = student.subjects[subj.name] || { grade: '-', points: '-', credits: '-' };
-        const gradeClass = details.grade === 'F' || details.grade === 'Ab' ? 'badge-danger' : 'badge-success';
-        rowHtml += `
-          <td><span class="badge ${gradeClass}">${details.grade}</span></td>
-        `;
+      
+      page.subjects.forEach(subj => {
+        pageHeaderCols += `<th>${subj.name} Grade</th>`;
         if (scope !== 'grades-only') {
-          rowHtml += `
-            <td style="text-align: center;">${details.points}</td>
-            <td style="text-align: center;">${details.credits}</td>
+          pageHeaderCols += `
+            <th style="text-align: center;">${subj.name} Points</th>
+            <th style="text-align: center;">${subj.name} Credits</th>
           `;
         }
       });
-
-      const statusBadgeClass = student.status === "PASS" ? "badge-success" : "badge-danger";
-      rowHtml += `
-        <td style="font-weight: 700; color: var(--primary);">${student.sgpa}</td>
-        <td>${student.cgpa}</td>
-        <td><span class="badge ${statusBadgeClass}">${student.status}</span></td>
-        <td style="text-align: center;">
-          <button class="btn-action-icon view-card-btn" data-regd="${student.regdNo}" data-report-idx="${activeReportIdx}" title="View & Print Report Card">
-            <svg class="icon" viewBox="0 0 24 24" style="width: 15px; height: 15px;">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-              <polyline points="14 2 14 8 20 8"></polyline>
-              <line x1="16" y1="13" x2="8" y2="13"></line>
-              <line x1="16" y1="17" x2="8" y2="17"></line>
-              <polyline points="10 9 9 9 8 9"></polyline>
-            </svg>
-          </button>
-        </td>
+      
+      pageHeaderCols += `
+        <th>SGPA</th>
+        <th>CGPA</th>
+        <th>Status</th>
+        <th style="text-align: center;">Actions</th>
       `;
-
-      bodyHtml += `<tr data-status="${student.status}">${rowHtml}</tr>`;
+      
+      let rowsHtml = "";
+      page.students.forEach(student => {
+        let rowHtml = `
+          <td style="font-weight: 600;">${student.regdNo}</td>
+          <td style="font-weight: 500;">${student.name}</td>
+          <td><span class="badge badge-info">${student.gender}</span></td>
+          <td style="font-size: 12px; font-weight: 500; color: var(--text-secondary);">${student.branch || page.groupName}</td>
+        `;
+        
+        page.subjects.forEach(subj => {
+          const details = student.subjects[subj.name] || { grade: '-', points: '-', credits: '-' };
+          const gradeClass = details.grade === 'F' || details.grade === 'Ab' ? 'badge-danger' : 'badge-success';
+          rowHtml += `
+            <td><span class="badge ${gradeClass}">${details.grade}</span></td>
+          `;
+          if (scope !== 'grades-only') {
+            rowHtml += `
+              <td style="text-align: center;">${details.points}</td>
+              <td style="text-align: center;">${details.credits}</td>
+            `;
+          }
+        });
+        
+        const statusBadgeClass = student.status === "PASS" ? "badge-success" : "badge-danger";
+        rowHtml += `
+          <td style="font-weight: 700; color: var(--primary);">${student.sgpa}</td>
+          <td>${student.cgpa}</td>
+          <td><span class="badge ${statusBadgeClass}">${student.status}</span></td>
+          <td style="text-align: center;">
+            <button class="btn-action-icon view-card-btn" data-regd="${student.regdNo}" data-report-idx="${activeReportIdx}" title="View & Print Report Card">
+              <svg class="icon" viewBox="0 0 24 24" style="width: 15px; height: 15px;">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+              </svg>
+            </button>
+          </td>
+        `;
+        
+        rowsHtml += `<tr data-status="${student.status}">${rowHtml}</tr>`;
+      });
+      
+      tablesHtml += `
+        <div class="page-structured-block" data-page-idx="${pageIdx}">
+          <div class="page-structured-header">
+            <h4 class="page-structured-title">
+              <svg class="icon" viewBox="0 0 24 24" style="width: 18px; height: 18px; color: var(--primary);">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+              </svg>
+              ${page.groupName}
+            </h4>
+            <span class="page-structured-badge">Page ${page.pageNo}</span>
+          </div>
+          <div class="page-table-wrapper">
+            <table class="structured-table">
+              <thead>
+                <tr>
+                  ${pageHeaderCols}
+                </tr>
+              </thead>
+              <tbody>
+                ${rowsHtml}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
     });
-
-    structuredBody.innerHTML = bodyHtml;
+    
+    structuredTablesContainer.innerHTML = tablesHtml;
   }
 
   // Filter Table function (Search & Status combined)
   function filterTable() {
     const query = studentSearchInput.value.toLowerCase().trim();
     const statusFilter = statusFilterSelect.value;
-    const rows = Array.from(structuredBody.querySelectorAll('tr'));
-
-    rows.forEach(row => {
-      const regdNo = row.cells[0] ? row.cells[0].textContent.toLowerCase() : "";
-      const name = row.cells[1] ? row.cells[1].textContent.toLowerCase() : "";
-      const matchesQuery = regdNo.includes(query) || name.includes(query);
-
-      const statusAttr = row.getAttribute('data-status') ? row.getAttribute('data-status').toLowerCase() : "";
-      let matchesStatus = true;
-      if (statusFilter === 'pass') {
-        matchesStatus = statusAttr === 'pass';
-      } else if (statusFilter === 'fail') {
-        matchesStatus = statusAttr === 'fail';
-      }
-
-      if (matchesQuery && matchesStatus) {
-        row.classList.remove('hidden');
+    
+    const blocks = Array.from(structuredTablesContainer.querySelectorAll('.page-structured-block'));
+    
+    blocks.forEach(block => {
+      const rows = Array.from(block.querySelectorAll('.structured-table tbody tr'));
+      let visibleRowsInBlock = 0;
+      
+      rows.forEach(row => {
+        const regdNo = row.cells[0] ? row.cells[0].textContent.toLowerCase() : "";
+        const name = row.cells[1] ? row.cells[1].textContent.toLowerCase() : "";
+        const matchesQuery = regdNo.includes(query) || name.includes(query);
+        
+        const statusAttr = row.getAttribute('data-status') ? row.getAttribute('data-status').toLowerCase() : "";
+        let matchesStatus = true;
+        if (statusFilter === 'pass') {
+          matchesStatus = statusAttr === 'pass';
+        } else if (statusFilter === 'fail') {
+          matchesStatus = statusAttr === 'fail';
+        }
+        
+        if (matchesQuery && matchesStatus) {
+          row.classList.remove('hidden');
+          visibleRowsInBlock++;
+        } else {
+          row.classList.add('hidden');
+        }
+      });
+      
+      if (visibleRowsInBlock > 0) {
+        block.classList.remove('hidden');
       } else {
-        row.classList.add('hidden');
+        block.classList.add('hidden');
       }
     });
   }
@@ -944,52 +995,118 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Render Subject-Wise Results Analytics
   function renderAnalytics(report) {
-    analyticsCollege.textContent = report.collegeName;
-    analyticsGroup.textContent = "Branch / Course Group: " + report.groupName;
-
-    const totalStudents = report.students.length;
-    const totalPassed = report.students.filter(s => s.status.toUpperCase() === "PASS").length;
-    const totalFailed = totalStudents - totalPassed;
-    const overallPercent = totalStudents > 0 ? ((totalPassed / totalStudents) * 100).toFixed(1) + "%" : "0.0%";
-
-    analyticsSummaryTotal.textContent = totalStudents;
-    analyticsSummaryPassed.textContent = totalPassed;
-    analyticsSummaryFailed.textContent = totalFailed;
-    analyticsSummaryPercent.textContent = overallPercent;
-
-    let tableHtml = "";
-    report.subjects.forEach(subj => {
-      let registered = 0;
-      let passed = 0;
-      let failed = 0;
-
-      report.students.forEach(student => {
-        const detail = student.subjects[subj.name];
-        if (detail && detail.grade !== "-") {
-          registered++;
-          const grade = detail.grade.toUpperCase();
-          if (grade !== "F" && grade !== "AB" && grade !== "Ab") {
-            passed++;
-          } else {
-            failed++;
-          }
-        }
-      });
-
-      const passPercent = registered > 0 ? ((passed / registered) * 100).toFixed(1) + "%" : "0.0%";
-
-      tableHtml += `
-        <tr>
-          <td style="font-weight: 600; color: var(--text-primary);">${subj.name}</td>
-          <td style="text-align: center; font-weight: 500;">${registered}</td>
-          <td style="text-align: center; font-weight: 600; color: var(--success);">${passed}</td>
-          <td style="text-align: center; font-weight: 600; color: ${failed > 0 ? 'var(--danger)' : 'var(--text-secondary)'};">${failed}</td>
-          <td style="text-align: center; font-weight: 700; color: var(--primary);">${passPercent}</td>
-        </tr>
-      `;
+    analyticsContainer.innerHTML = "";
+    
+    // Group students by branch
+    const branchMap = {};
+    report.students.forEach(student => {
+      const b = student.branch || report.groupName || "B.Tech";
+      if (!branchMap[b]) {
+        branchMap[b] = [];
+      }
+      branchMap[b].push(student);
     });
+    
+    // For each branch, build the analytics card
+    Object.keys(branchMap).forEach(branchName => {
+      const branchStudents = branchMap[branchName];
+      
+      // Determine subjects active for this branch
+      const branchSubjects = report.subjects.filter(subj => {
+        return branchStudents.some(s => {
+          const detail = s.subjects[subj.name];
+          return detail && detail.grade !== "-";
+        });
+      });
+      
+      const totalStudents = branchStudents.length;
+      const totalPassed = branchStudents.filter(s => s.status.toUpperCase() === "PASS").length;
+      const totalFailed = totalStudents - totalPassed;
+      const overallPercent = totalStudents > 0 ? ((totalPassed / totalStudents) * 100).toFixed(1) + "%" : "0.0%";
+      
+      let tableRowsHtml = "";
+      branchSubjects.forEach(subj => {
+        let registered = 0;
+        let passed = 0;
+        let failed = 0;
+        
+        branchStudents.forEach(student => {
+          const detail = student.subjects[subj.name];
+          if (detail && detail.grade !== "-") {
+            registered++;
+            const grade = detail.grade.toUpperCase();
+            if (grade !== "F" && grade !== "AB" && grade !== "Ab") {
+              passed++;
+            } else {
+              failed++;
+            }
+          }
+        });
+        
+        const passPercent = registered > 0 ? ((passed / registered) * 100).toFixed(1) + "%" : "0.0%";
+        
+        tableRowsHtml += `
+          <tr>
+            <td style="font-weight: 600; color: var(--text-primary);">${subj.name}</td>
+            <td style="text-align: center; font-weight: 500;">${registered}</td>
+            <td style="text-align: center; font-weight: 600; color: var(--success);">${passed}</td>
+            <td style="text-align: center; font-weight: 600; color: ${failed > 0 ? 'var(--danger)' : 'var(--text-secondary)'};">${failed}</td>
+            <td style="text-align: center; font-weight: 700; color: var(--primary);">${passPercent}</td>
+          </tr>
+        `;
+      });
+      
+      let cleanCollege = report.collegeName;
+      if (cleanCollege.includes("GAYATRI VIDYA PARISHAD")) {
+        cleanCollege = "GAYATRI VIDYA PARISHAD COLLEGE FOR DEGREE & P.G. COURSES (AUTONOMOUS)";
+      }
+      
+      const cardHtml = `
+        <div class="analytics-card" style="margin-bottom: 30px;">
+          <div class="analytics-print-header">
+            <h2>${cleanCollege}</h2>
+            <h3>Subject-Wise Results Analysis</h3>
+            <p>Branch / Course Group: ${branchName}</p>
+          </div>
+          
+          <div class="analytics-grid">
+            <div class="analytics-summary-item">
+              <span class="label">Total Students</span>
+              <span class="value">${totalStudents}</span>
+            </div>
+            <div class="analytics-summary-item success">
+              <span class="label">Total Passed</span>
+              <span class="value">${totalPassed}</span>
+            </div>
+            <div class="analytics-summary-item danger">
+              <span class="label">Total Failed</span>
+              <span class="value">${totalFailed}</span>
+            </div>
+            <div class="analytics-summary-item teal">
+              <span class="label">Overall Pass %</span>
+              <span class="value">${overallPercent}</span>
+            </div>
+          </div>
 
-    analyticsTableBody.innerHTML = tableHtml;
+          <table class="analytics-table">
+            <thead>
+              <tr>
+                <th>Subject Name</th>
+                <th style="text-align: center;">Candidates Registered</th>
+                <th style="text-align: center;">Passed</th>
+                <th style="text-align: center;">Failed / Absent</th>
+                <th style="text-align: center;">Pass Percentage</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${tableRowsHtml}
+            </tbody>
+          </table>
+        </div>
+      `;
+      
+      analyticsContainer.insertAdjacentHTML('beforeend', cardHtml);
+    });
   }
 
   // Excel Downloads
@@ -1026,44 +1143,77 @@ document.addEventListener('DOMContentLoaded', () => {
 
     try {
       reports.forEach(report => {
-        const sheetData = report.students.map(student => {
-          const row = {
-            "Register No": student.regdNo,
-            "Student Name": student.name,
-            "Gender": student.gender,
-            "Branch": student.branch || report.groupName
-          };
-
-          report.subjects.forEach(subj => {
-            const details = student.subjects[subj.name] || { grade: '-', points: '-', credits: '-' };
-            row[`${subj.name} Grade`] = details.grade;
-            if (scope !== 'grades-only') {
-              row[`${subj.name} Points`] = details.points;
-              row[`${subj.name} Credits`] = details.credits;
-            }
-          });
-
-          row["SGPA"] = parseFloat(student.sgpa);
-          row["CGPA"] = parseFloat(student.cgpa);
-          row["Status"] = student.status;
-
-          return row;
+        // Group students by branch name
+        const branchMap = {};
+        report.students.forEach(student => {
+          const b = student.branch || report.groupName || "B.Tech";
+          if (!branchMap[b]) {
+            branchMap[b] = [];
+          }
+          branchMap[b].push(student);
         });
 
-        const ws = XLSX.utils.json_to_sheet(sheetData);
-        
-        // Auto-fit column widths
-        const colWidths = Object.keys(sheetData[0]).map(key => {
-          let maxLen = key.length;
-          sheetData.forEach(row => {
-            const val = row[key] ? row[key].toString() : "";
-            if (val.length > maxLen) maxLen = val.length;
+        // For each branch, create a separate sheet
+        Object.keys(branchMap).forEach(branchName => {
+          const branchStudents = branchMap[branchName];
+          
+          // Determine subjects active for this branch
+          const branchSubjects = report.subjects.filter(subj => {
+            return branchStudents.some(s => {
+              const detail = s.subjects[subj.name];
+              return detail && detail.grade !== "-";
+            });
           });
-          return { wch: maxLen + 2 };
-        });
-        ws['!cols'] = colWidths;
 
-        XLSX.utils.book_append_sheet(wb, ws, report.sheetName);
+          const sheetData = branchStudents.map(student => {
+            const row = {
+              "Register No": student.regdNo,
+              "Student Name": student.name,
+              "Gender": student.gender,
+              "Branch": branchName
+            };
+
+            branchSubjects.forEach(subj => {
+              const details = student.subjects[subj.name] || { grade: '-', points: '-', credits: '-' };
+              row[`${subj.name} Grade`] = details.grade;
+              if (scope !== 'grades-only') {
+                row[`${subj.name} Points`] = details.points;
+                row[`${subj.name} Credits`] = details.credits;
+              }
+            });
+
+            row["SGPA"] = parseFloat(student.sgpa) || 0;
+            row["CGPA"] = parseFloat(student.cgpa) || 0;
+            row["Status"] = student.status;
+
+            return row;
+          });
+
+          const ws = XLSX.utils.json_to_sheet(sheetData);
+          
+          // Auto-fit column widths
+          const colWidths = Object.keys(sheetData[0]).map(key => {
+            let maxLen = key.length;
+            sheetData.forEach(row => {
+              const val = row[key] ? row[key].toString() : "";
+              if (val.length > maxLen) maxLen = val.length;
+            });
+            return { wch: maxLen + 2 };
+          });
+          ws['!cols'] = colWidths;
+
+          // Determine sheet name (Excel limits sheet names to 31 characters)
+          let finalSheetName = "";
+          if (reports.length === 1) {
+            finalSheetName = branchName.replace(/[\\\/\?\*\[\]]/g, "").substring(0, 30);
+          } else {
+            const shortReport = report.sheetName.substring(0, 15);
+            const shortBranch = branchName.replace("B.Tech - ", "").replace(/[\\\/\?\*\[\]]/g, "").substring(0, 10);
+            finalSheetName = `${shortReport} - ${shortBranch}`;
+          }
+
+          XLSX.utils.book_append_sheet(wb, ws, finalSheetName);
+        });
       });
 
       const outputFileName = reports.length === 1 ? `${currentFileName}_clean.xlsx` : "combined_reports_clean.xlsx";
@@ -1075,7 +1225,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Redirect from Structured Table row action to Student Report Cards tab
-  structuredBody.addEventListener('click', (e) => {
+  structuredTablesContainer.addEventListener('click', (e) => {
     const btn = e.target.closest('.view-card-btn');
     if (btn) {
       const regdNo = btn.getAttribute('data-regd');
