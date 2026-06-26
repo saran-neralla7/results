@@ -1517,7 +1517,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="memo-header">
           <div class="college-name">${cleanCollege}</div>
           <div class="accreditation">Re-accredited by NAAC with 'A' Grade | Affiliated to Andhra University</div>
-          <div class="location">Madhurawada, Visakhapatnam - 530048</div>
+          <div class="location">Rushikonda, Visakhapatnam - 530045</div>
         </div>
         
         <div class="memo-title">Provisional Marks Memorandum</div>
