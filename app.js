@@ -53,6 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Table Controls (Search & Filter)
   const studentSearchInput = document.getElementById('student-search-input');
   const statusFilterSelect = document.getElementById('status-filter-select');
+  const tableModeSelect = document.getElementById('table-mode-select');
   
   // Stats Elements
   const statCollege = document.getElementById('stat-college');
@@ -665,12 +666,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         let gender = "M"; 
+        let genderColIdx = -1;
         const searchGenderLimit = subjects[0].colStart;
         for (let c = nameColEnd + 1; c < searchGenderLimit; c++) {
           if (grid[r][c] && grid[r][c].isOrigin) {
             const txt = grid[r][c].text.trim();
             if (txt === "M" || txt === "F") {
               gender = txt;
+              genderColIdx = c;
               break;
             }
           }
@@ -745,8 +748,9 @@ document.addEventListener('DOMContentLoaded', () => {
           const cellValues = [];
           for (let c = subj.colStart - 1; c <= subj.colEnd + 1; c++) {
             if (c >= 0 && c < numCols && grid[r][c] && grid[r][c].isOrigin) {
+              if (c === genderColIdx) continue;
               const txt = grid[r][c].text.trim();
-              if (txt && txt !== studentName && txt !== regdNo && txt !== sgpa && txt !== cgpa && txt !== status && txt !== gender) {
+              if (txt && txt !== studentName && txt !== regdNo && txt !== sgpa && txt !== cgpa && txt !== status) {
                 if (!cellValues.includes(txt)) {
                   cellValues.push(txt);
                 }
@@ -847,104 +851,224 @@ document.addEventListener('DOMContentLoaded', () => {
   // Render Cleaned Data Table
   function renderStructuredTable(report) {
     const scope = exportScopeSelect.value;
+    const mode = tableModeSelect ? tableModeSelect.value : 'page';
     let tablesHtml = "";
     
-    report.pages.forEach((page, pageIdx) => {
-      let pageHeaderCols = `
-        <th>Register No</th>
-        <th>Student Name</th>
-        <th>Gender</th>
-        <th>Branch</th>
-      `;
-      
-      page.subjects.forEach(subj => {
-        pageHeaderCols += `<th>${subj.name} Grade</th>`;
-        if (scope !== 'grades-only') {
-          pageHeaderCols += `
-            <th style="text-align: center;">${subj.name} Points</th>
-            <th style="text-align: center;">${subj.name} Credits</th>
-          `;
-        }
-      });
-      
-      pageHeaderCols += `
-        <th>SGPA</th>
-        <th>CGPA</th>
-        <th>Status</th>
-        <th style="text-align: center;">Actions</th>
-      `;
-      
-      let rowsHtml = "";
-      page.students.forEach(student => {
-        let rowHtml = `
-          <td style="font-weight: 600;">${student.regdNo}</td>
-          <td style="font-weight: 500;">${student.name}</td>
-          <td><span class="badge badge-info">${student.gender}</span></td>
-          <td style="font-size: 12px; font-weight: 500; color: var(--text-secondary);">${student.branch || page.groupName}</td>
+    if (mode === 'page') {
+      report.pages.forEach((page, pageIdx) => {
+        let pageHeaderCols = `
+          <th>Register No</th>
+          <th>Student Name</th>
+          <th>Gender</th>
+          <th>Branch</th>
         `;
         
         page.subjects.forEach(subj => {
-          const details = student.subjects[subj.name] || { grade: '-', points: '-', credits: '-' };
-          const gradeClass = details.grade === 'F' || details.grade === 'Ab' ? 'badge-danger' : 'badge-success';
-          rowHtml += `
-            <td><span class="badge ${gradeClass}">${details.grade}</span></td>
-          `;
+          pageHeaderCols += `<th>${subj.name} Grade</th>`;
           if (scope !== 'grades-only') {
-            rowHtml += `
-              <td style="text-align: center;">${details.points}</td>
-              <td style="text-align: center;">${details.credits}</td>
+            pageHeaderCols += `
+              <th style="text-align: center;">${subj.name} Points</th>
+              <th style="text-align: center;">${subj.name} Credits</th>
             `;
           }
         });
         
-        const statusBadgeClass = student.status === "PASS" ? "badge-success" : "badge-danger";
-        rowHtml += `
-          <td style="font-weight: 700; color: var(--primary);">${student.sgpa}</td>
-          <td>${student.cgpa}</td>
-          <td><span class="badge ${statusBadgeClass}">${student.status}</span></td>
-          <td style="text-align: center;">
-            <button class="btn-action-icon view-card-btn" data-regd="${student.regdNo}" data-report-idx="${activeReportIdx}" title="View & Print Report Card">
-              <svg class="icon" viewBox="0 0 24 24" style="width: 15px; height: 15px;">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                <polyline points="14 2 14 8 20 8"></polyline>
-                <line x1="16" y1="13" x2="8" y2="13"></line>
-                <line x1="16" y1="17" x2="8" y2="17"></line>
-                <polyline points="10 9 9 9 8 9"></polyline>
-              </svg>
-            </button>
-          </td>
+        pageHeaderCols += `
+          <th>SGPA</th>
+          <th>CGPA</th>
+          <th>Status</th>
+          <th style="text-align: center;">Actions</th>
         `;
         
-        rowsHtml += `<tr data-status="${student.status}">${rowHtml}</tr>`;
+        let rowsHtml = "";
+        page.students.forEach(student => {
+          let rowHtml = `
+            <td style="font-weight: 600;">${student.regdNo}</td>
+            <td style="font-weight: 500;">${student.name}</td>
+            <td><span class="badge badge-info">${student.gender}</span></td>
+            <td style="font-size: 12px; font-weight: 500; color: var(--text-secondary);">${student.branch || page.groupName}</td>
+          `;
+          
+          page.subjects.forEach(subj => {
+            const details = student.subjects[subj.name] || { grade: '-', points: '-', credits: '-' };
+            const gradeClass = details.grade === 'F' || details.grade === 'Ab' ? 'badge-danger' : 'badge-success';
+            rowHtml += `
+              <td><span class="badge ${gradeClass}">${details.grade}</span></td>
+            `;
+            if (scope !== 'grades-only') {
+              rowHtml += `
+                <td style="text-align: center;">${details.points}</td>
+                <td style="text-align: center;">${details.credits}</td>
+              `;
+            }
+          });
+          
+          const statusBadgeClass = student.status === "PASS" ? "badge-success" : "badge-danger";
+          rowHtml += `
+            <td style="font-weight: 700; color: var(--primary);">${student.sgpa}</td>
+            <td>${student.cgpa}</td>
+            <td><span class="badge ${statusBadgeClass}">${student.status}</span></td>
+            <td style="text-align: center;">
+              <button class="btn-action-icon view-card-btn" data-regd="${student.regdNo}" data-report-idx="${activeReportIdx}" title="View & Print Report Card">
+                <svg class="icon" viewBox="0 0 24 24" style="width: 15px; height: 15px;">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                  <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+              </button>
+            </td>
+          `;
+          
+          rowsHtml += `<tr data-status="${student.status}">${rowHtml}</tr>`;
+        });
+        
+        tablesHtml += `
+          <div class="page-structured-block" data-page-idx="${pageIdx}">
+            <div class="page-structured-header">
+              <h4 class="page-structured-title">
+                <svg class="icon" viewBox="0 0 24 24" style="width: 18px; height: 18px; color: var(--primary);">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                </svg>
+                ${page.groupName}
+              </h4>
+              <span class="page-structured-badge">Page ${page.pageNo}</span>
+            </div>
+            <div class="page-table-wrapper">
+              <table class="structured-table">
+                <thead>
+                  <tr>
+                    ${pageHeaderCols}
+                  </tr>
+                </thead>
+                <tbody>
+                  ${rowsHtml}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
+      });
+    } else {
+      // Branch-wise layout
+      const branchMap = {};
+      report.students.forEach(student => {
+        const b = student.branch || report.groupName || "B.Tech";
+        if (!branchMap[b]) {
+          branchMap[b] = [];
+        }
+        branchMap[b].push(student);
       });
       
-      tablesHtml += `
-        <div class="page-structured-block" data-page-idx="${pageIdx}">
-          <div class="page-structured-header">
-            <h4 class="page-structured-title">
-              <svg class="icon" viewBox="0 0 24 24" style="width: 18px; height: 18px; color: var(--primary);">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                <polyline points="14 2 14 8 20 8"></polyline>
-              </svg>
-              ${page.groupName}
-            </h4>
-            <span class="page-structured-badge">Page ${page.pageNo}</span>
+      Object.keys(branchMap).forEach((branchName, branchIdx) => {
+        const branchStudents = branchMap[branchName];
+        
+        // Find subjects active for this branch
+        const branchSubjects = report.subjects.filter(subj => {
+          return branchStudents.some(s => {
+            const detail = s.subjects[subj.name];
+            return detail && detail.grade !== "-";
+          });
+        });
+        
+        let branchHeaderCols = `
+          <th>Register No</th>
+          <th>Student Name</th>
+          <th>Gender</th>
+          <th>Branch</th>
+        `;
+        
+        branchSubjects.forEach(subj => {
+          branchHeaderCols += `<th>${subj.name} Grade</th>`;
+          if (scope !== 'grades-only') {
+            branchHeaderCols += `
+              <th style="text-align: center;">${subj.name} Points</th>
+              <th style="text-align: center;">${subj.name} Credits</th>
+            `;
+          }
+        });
+        
+        branchHeaderCols += `
+          <th>SGPA</th>
+          <th>CGPA</th>
+          <th>Status</th>
+          <th style="text-align: center;">Actions</th>
+        `;
+        
+        let rowsHtml = "";
+        branchStudents.forEach(student => {
+          let rowHtml = `
+            <td style="font-weight: 600;">${student.regdNo}</td>
+            <td style="font-weight: 500;">${student.name}</td>
+            <td><span class="badge badge-info">${student.gender}</span></td>
+            <td style="font-size: 12px; font-weight: 500; color: var(--text-secondary);">${branchName}</td>
+          `;
+          
+          branchSubjects.forEach(subj => {
+            const details = student.subjects[subj.name] || { grade: '-', points: '-', credits: '-' };
+            const gradeClass = details.grade === 'F' || details.grade === 'Ab' ? 'badge-danger' : 'badge-success';
+            rowHtml += `
+              <td><span class="badge ${gradeClass}">${details.grade}</span></td>
+            `;
+            if (scope !== 'grades-only') {
+              rowHtml += `
+                <td style="text-align: center;">${details.points}</td>
+                <td style="text-align: center;">${details.credits}</td>
+              `;
+            }
+          });
+          
+          const statusBadgeClass = student.status === "PASS" ? "badge-success" : "badge-danger";
+          rowHtml += `
+            <td style="font-weight: 700; color: var(--primary);">${student.sgpa}</td>
+            <td>${student.cgpa}</td>
+            <td><span class="badge ${statusBadgeClass}">${student.status}</span></td>
+            <td style="text-align: center;">
+              <button class="btn-action-icon view-card-btn" data-regd="${student.regdNo}" data-report-idx="${activeReportIdx}" title="View & Print Report Card">
+                <svg class="icon" viewBox="0 0 24 24" style="width: 15px; height: 15px;">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                  <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+              </button>
+            </td>
+          `;
+          
+          rowsHtml += `<tr data-status="${student.status}">${rowHtml}</tr>`;
+        });
+        
+        tablesHtml += `
+          <div class="page-structured-block" data-branch-idx="${branchIdx}">
+            <div class="page-structured-header">
+              <h4 class="page-structured-title">
+                <svg class="icon" viewBox="0 0 24 24" style="width: 18px; height: 18px; color: var(--primary);">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                </svg>
+                ${branchName}
+              </h4>
+              <span class="page-structured-badge">${branchStudents.length} Candidates</span>
+            </div>
+            <div class="page-table-wrapper">
+              <table class="structured-table">
+                <thead>
+                  <tr>
+                    ${branchHeaderCols}
+                  </tr>
+                </thead>
+                <tbody>
+                  ${rowsHtml}
+                </tbody>
+              </table>
+            </div>
           </div>
-          <div class="page-table-wrapper">
-            <table class="structured-table">
-              <thead>
-                <tr>
-                  ${pageHeaderCols}
-                </tr>
-              </thead>
-              <tbody>
-                ${rowsHtml}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      `;
-    });
+        `;
+      });
+    }
     
     structuredTablesContainer.innerHTML = tablesHtml;
   }
@@ -992,6 +1116,12 @@ document.addEventListener('DOMContentLoaded', () => {
   // Hook Search & Filter Events
   studentSearchInput.addEventListener('input', filterTable);
   statusFilterSelect.addEventListener('change', filterTable);
+  tableModeSelect.addEventListener('change', () => {
+    if (parsedData) {
+      renderStructuredTable(parsedData);
+      filterTable();
+    }
+  });
 
   // Render Subject-Wise Results Analytics
   function renderAnalytics(report) {
