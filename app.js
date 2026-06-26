@@ -1126,6 +1126,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Render Subject-Wise Results Analytics
   function renderAnalytics(report) {
     analyticsContainer.innerHTML = "";
+    document.getElementById('deans-summary-container').innerHTML = "";
     
     // Group students by branch
     const branchMap = {};
@@ -1137,7 +1138,94 @@ document.addEventListener('DOMContentLoaded', () => {
       branchMap[b].push(student);
     });
     
-    // For each branch, build the analytics card
+    // 1. Render Dean's Summary Card
+    let cleanCollege = report.collegeName;
+    if (cleanCollege.includes("GAYATRI VIDYA PARISHAD")) {
+      cleanCollege = "GAYATRI VIDYA PARISHAD COLLEGE FOR DEGREE & P.G. COURSES (AUTONOMOUS)";
+    }
+    
+    let summaryRowsHtml = "";
+    Object.keys(branchMap).forEach(branchName => {
+      const branchStudents = branchMap[branchName];
+      const totalStudents = branchStudents.length;
+      const totalPassed = branchStudents.filter(s => s.status.toUpperCase() === "PASS").length;
+      const totalFailed = totalStudents - totalPassed;
+      const overallPercent = totalStudents > 0 ? ((totalPassed / totalStudents) * 100).toFixed(1) + "%" : "0.0%";
+      
+      summaryRowsHtml += `
+        <tr>
+          <td style="font-weight: 700; color: var(--text-primary);">${branchName}</td>
+          <td style="text-align: center; font-weight: 600;">${totalStudents}</td>
+          <td style="text-align: center; font-weight: 600; color: var(--success);">${totalPassed}</td>
+          <td style="text-align: center; font-weight: 600; color: ${totalFailed > 0 ? 'var(--danger)' : 'var(--text-secondary)'};">${totalFailed}</td>
+          <td style="text-align: center; font-weight: 800; color: var(--primary);">${overallPercent}</td>
+        </tr>
+      `;
+    });
+    
+    const deansSummaryHtml = `
+      <div class="deans-summary-card">
+        <div class="print-btn-container" style="display: flex; justify-content: flex-end; margin-bottom: 15px;">
+          <button id="print-deans-summary-btn" class="btn btn-success">
+            <svg class="icon" viewBox="0 0 24 24" style="width: 15px; height: 15px; margin-right: 6px;">
+              <polyline points="6 9 6 2 18 2 18 9"></polyline>
+              <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+              <rect x="6" y="14" width="12" height="8"></rect>
+            </svg>
+            Print Summary Sheet
+          </button>
+        </div>
+        <div class="deans-summary-header">
+          <h2>${cleanCollege}</h2>
+          <h3>Overall Examination Performance Summary</h3>
+          <p>Academic Session: Jan 2026 | Dean's Summary Sheet</p>
+        </div>
+        
+        <table class="deans-summary-table">
+          <thead>
+            <tr>
+              <th>Branch / Course</th>
+              <th style="text-align: center;">Total Candidates</th>
+              <th style="text-align: center;">Passed</th>
+              <th style="text-align: center;">Failed / Absent</th>
+              <th style="text-align: center;">Pass Percentage</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${summaryRowsHtml}
+          </tbody>
+        </table>
+        
+        <div class="dean-signatures">
+          <div class="sig-col">
+            <div class="sig-line"></div>
+            <span>Prepared By</span>
+          </div>
+          <div class="sig-col">
+            <div class="sig-line"></div>
+            <span>Dean of Examinations</span>
+          </div>
+          <div class="sig-col">
+            <div class="sig-line"></div>
+            <span>Principal</span>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    document.getElementById('deans-summary-container').innerHTML = deansSummaryHtml;
+    
+    // Add print event listener
+    document.getElementById('deans-summary-container').addEventListener('click', (e) => {
+      const btn = e.target.closest('#print-deans-summary-btn');
+      if (btn) {
+        document.body.classList.add('active-print-deans-summary');
+        window.print();
+        document.body.classList.remove('active-print-deans-summary');
+      }
+    });
+
+    // 2. Render Branch detailed cards
     Object.keys(branchMap).forEach(branchName => {
       const branchStudents = branchMap[branchName];
       
@@ -1153,6 +1241,73 @@ document.addEventListener('DOMContentLoaded', () => {
       const totalPassed = branchStudents.filter(s => s.status.toUpperCase() === "PASS").length;
       const totalFailed = totalStudents - totalPassed;
       const overallPercent = totalStudents > 0 ? ((totalPassed / totalStudents) * 100).toFixed(1) + "%" : "0.0%";
+      
+      // Calculate SGPA bands for the chart
+      const bands = [0, 0, 0, 0, 0, 0]; // 9-10, 8-9, 7-8, 6-7, 5-6, <5/Fail
+      branchStudents.forEach(student => {
+        const gpa = parseFloat(student.sgpa || 0);
+        if (gpa >= 9.0 && gpa <= 10.0) bands[0]++;
+        else if (gpa >= 8.0 && gpa < 9.0) bands[1]++;
+        else if (gpa >= 7.0 && gpa < 8.0) bands[2]++;
+        else if (gpa >= 6.0 && gpa < 7.0) bands[3]++;
+        else if (gpa >= 5.0 && gpa < 6.0) bands[4]++;
+        else bands[5]++;
+      });
+      
+      // Generate SVG Chart
+      const maxVal = Math.max(...bands, 1);
+      
+      // SVG parameters
+      const width = 420;
+      const height = 220;
+      const paddingLeft = 40;
+      const paddingTop = 20;
+      const paddingBottom = 30;
+      const chartWidth = width - paddingLeft - 20; // 360
+      const chartHeight = height - paddingTop - paddingBottom; // 170
+      
+      let gridLinesHtml = "";
+      // Grid lines: draw 4 grid lines
+      for (let i = 1; i <= 4; i++) {
+        const val = Math.round((maxVal / 4) * i);
+        const y = 190 - (val / maxVal) * chartHeight;
+        gridLinesHtml += `
+          <line class="chart-grid-line" x1="${paddingLeft}" y1="${y}" x2="${width - 20}" y2="${y}" />
+          <text class="chart-label" x="${paddingLeft - 8}" y="${y + 3}" text-anchor="end">${val}</text>
+        `;
+      }
+      
+      let barsHtml = "";
+      const labels = ["9.0-10", "8.0-8.9", "7.0-7.9", "6.0-6.9", "5.0-5.9", "<5.0"];
+      for (let i = 0; i < 6; i++) {
+        const val = bands[i];
+        const barH = (val / maxVal) * chartHeight;
+        const x = paddingLeft + i * 60 + 6;
+        const y = 190 - barH;
+        
+        barsHtml += `
+          <rect class="chart-bar" x="${x}" y="${y}" width="48" height="${barH}" />
+          <text class="chart-value" x="${x + 24}" y="${y - 6}" text-anchor="middle">${val}</text>
+          <text class="chart-label" x="${paddingLeft + i * 60 + 30}" y="205" text-anchor="middle">${labels[i]}</text>
+        `;
+      }
+      
+      const svgChartHtml = `
+        <div class="sgpa-chart-wrapper">
+          <div class="sgpa-chart-title">SGPA Grade Distribution</div>
+          <svg viewBox="0 0 ${width} ${height}" style="width: 100%; height: auto; max-width: 420px; overflow: visible;">
+            <!-- Y-Axis label -->
+            <text class="chart-label" x="12" y="10" text-anchor="start" font-weight="700">STUDENTS</text>
+            <!-- Baseline -->
+            <line x1="${paddingLeft}" y1="190" x2="${width - 20}" y2="190" stroke="var(--border-color)" stroke-width="1.5" />
+            <!-- Grid & Labels -->
+            ${gridLinesHtml}
+            <text class="chart-label" x="${paddingLeft - 8}" y="193" text-anchor="end">0</text>
+            <!-- Bars & Values -->
+            ${barsHtml}
+          </svg>
+        </div>
+      `;
       
       let tableRowsHtml = "";
       branchSubjects.forEach(subj => {
@@ -1173,7 +1328,11 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         });
         
-        const passPercent = registered > 0 ? ((passed / registered) * 100).toFixed(1) + "%" : "0.0%";
+        const passPercentVal = registered > 0 ? (passed / registered) * 100 : 0;
+        const passPercent = passPercentVal.toFixed(1) + "%";
+        const isLowPass = passPercentVal <= 70.0;
+        
+        const passBadgeClass = isLowPass ? 'badge-low-pass' : 'badge badge-success';
         
         tableRowsHtml += `
           <tr>
@@ -1181,15 +1340,12 @@ document.addEventListener('DOMContentLoaded', () => {
             <td style="text-align: center; font-weight: 500;">${registered}</td>
             <td style="text-align: center; font-weight: 600; color: var(--success);">${passed}</td>
             <td style="text-align: center; font-weight: 600; color: ${failed > 0 ? 'var(--danger)' : 'var(--text-secondary)'};">${failed}</td>
-            <td style="text-align: center; font-weight: 700; color: var(--primary);">${passPercent}</td>
+            <td style="text-align: center; font-weight: 700;">
+              <span class="${passBadgeClass}">${passPercent}</span>
+            </td>
           </tr>
         `;
       });
-      
-      let cleanCollege = report.collegeName;
-      if (cleanCollege.includes("GAYATRI VIDYA PARISHAD")) {
-        cleanCollege = "GAYATRI VIDYA PARISHAD COLLEGE FOR DEGREE & P.G. COURSES (AUTONOMOUS)";
-      }
       
       const cardHtml = `
         <div class="analytics-card" style="margin-bottom: 30px;">
@@ -1199,23 +1355,26 @@ document.addEventListener('DOMContentLoaded', () => {
             <p>Branch / Course Group: ${branchName}</p>
           </div>
           
-          <div class="analytics-grid">
-            <div class="analytics-summary-item">
-              <span class="label">Total Students</span>
-              <span class="value">${totalStudents}</span>
+          <div class="analytics-main-layout">
+            <div class="analytics-grid" style="margin-bottom: 0;">
+              <div class="analytics-summary-item">
+                <span class="label">Total Students</span>
+                <span class="value">${totalStudents}</span>
+              </div>
+              <div class="analytics-summary-item success">
+                <span class="label">Total Passed</span>
+                <span class="value">${totalPassed}</span>
+              </div>
+              <div class="analytics-summary-item danger">
+                <span class="label">Total Failed</span>
+                <span class="value">${totalFailed}</span>
+              </div>
+              <div class="analytics-summary-item teal">
+                <span class="label">Overall Pass %</span>
+                <span class="value">${overallPercent}</span>
+              </div>
             </div>
-            <div class="analytics-summary-item success">
-              <span class="label">Total Passed</span>
-              <span class="value">${totalPassed}</span>
-            </div>
-            <div class="analytics-summary-item danger">
-              <span class="label">Total Failed</span>
-              <span class="value">${totalFailed}</span>
-            </div>
-            <div class="analytics-summary-item teal">
-              <span class="label">Overall Pass %</span>
-              <span class="value">${overallPercent}</span>
-            </div>
+            ${svgChartHtml}
           </div>
 
           <table class="analytics-table">
