@@ -222,6 +222,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Helper to normalize branch/group names (merges (L E) / (LE) with parent branches)
+  function normalizeGroupName(name) {
+    if (!name) return "";
+    return name
+      .replace(/\s*\(\s*L\s*\.?\s*E\s*\.?\s*\)/gi, "") // removes " (L E)", "(LE)", "(L.E.)" etc.
+      .replace(/\s*-\s*L\s*\.?\s*E\s*\.?\b/gi, "")     // removes " - L E", "- LE", "- L.E." etc.
+      .replace(/\s+L\s*\.?\s*E\s*\.?\b/gi, "")          // removes " L E", " LE", " L.E." at the end
+      .trim();
+  }
+
   // Parse complete report (supporting multi-page Oracle Reports with multiple tables)
   function parseReportFromHtml(htmlText) {
     const parser = new DOMParser();
@@ -547,7 +557,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if (text.includes("GROUP :")) {
             for (let c2 = c + 1; c2 < numCols; c2++) {
               if (grid[r][c2] && grid[r][c2].isOrigin && grid[r][c2].text) {
-                groupName = grid[r][c2].text.trim();
+                groupName = normalizeGroupName(grid[r][c2].text.trim());
                 break;
               }
             }
