@@ -2231,3 +2231,113 @@ header {
   }
 }
 
+/* Subject-wise Grade Breakdown (Expandable Accordion Rows) */
+.subject-row {
+  transition: background-color 0.15s ease;
+}
+
+.subject-row:hover {
+  background-color: var(--primary-light) !important;
+}
+
+.expand-icon {
+  color: var(--primary);
+  font-size: 8px;
+  width: 12px;
+  height: 12px;
+  line-height: 12px;
+  text-align: center;
+  display: inline-block;
+}
+
+.subject-detail-row td {
+  background: var(--bg-app) !important;
+  padding: 10px 16px 12px 30px !important;
+  border-bottom: 1px solid var(--border-color) !important;
+}
+
+.subject-grades-wrapper {
+  animation: slideDown 0.2s ease-out;
+}
+
+.subject-grades-title {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+}
+
+.subject-grades-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.subj-grade-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 5px 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  transition: background-color var(--transition-normal);
+}
+
+.subj-grade-count {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.subj-grade-label {
+  font-size: 8px;
+  color: var(--text-muted);
+}
+
+.subj-grade-pct {
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 10px;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Print layout for subject detail rows */
+@media print {
+  .subject-detail-row.hidden {
+    display: none !important;
+  }
+  
+  .subject-detail-row {
+    display: table-row !important;
+  }
+  
+  .subject-detail-row td {
+    background-color: #f8fafc !important;
+    border: 1px solid #cbd5e1 !important;
+    padding: 8px 12px 8px 24px !important;
+  }
+  
+  .subj-grade-card {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+  }
+  
+  .expand-icon {
+    display: none !important;
+  }
+}
+
+

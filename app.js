@@ -214,6 +214,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Subject Table row expand/collapse logic
+  document.addEventListener('click', (e) => {
+    const row = e.target.closest('.subject-row');
+    if (row) {
+      const detailRow = row.nextElementSibling;
+      if (detailRow && detailRow.classList.contains('subject-detail-row')) {
+        detailRow.classList.toggle('hidden');
+        const expandIcon = row.querySelector('.expand-icon');
+        if (expandIcon) {
+          expandIcon.style.transform = detailRow.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(90deg)';
+        }
+      }
+    }
+  });
+
   // Switch Active File Selector Event Listener
   activeFileSelect.addEventListener('change', (e) => {
     activeReportIdx = parseInt(e.target.value, 10);
@@ -1324,10 +1339,12 @@ document.addEventListener('DOMContentLoaded', () => {
         let registered = 0;
         let passed = 0;
         let failed = 0;
+        const subjectGrades = {};
+        let totalSubjectGrades = 0;
         
         branchStudents.forEach(student => {
           const detail = student.subjects[subj.name];
-          if (detail && detail.grade !== "-") {
+          if (detail && detail.grade && detail.grade !== "-") {
             registered++;
             const grade = detail.grade.toUpperCase();
             if (grade !== "F" && grade !== "AB" && grade !== "Ab") {
@@ -1335,6 +1352,11 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
               failed++;
             }
+            
+            let normGr = grade;
+            if (grade === "AB") normGr = "Ab";
+            subjectGrades[normGr] = (subjectGrades[normGr] || 0) + 1;
+            totalSubjectGrades++;
           }
         });
         
@@ -1343,15 +1365,56 @@ document.addEventListener('DOMContentLoaded', () => {
         const isLowPass = passPercentVal <= 70.0;
         
         const passBadgeClass = isLowPass ? 'badge-low-pass' : 'badge badge-success';
+
+        // Build Grade Breakdown for this subject
+        const standardGrades = ["O", "S", "A+", "A", "B+", "B", "C", "D", "E", "F", "Ab"];
+        const extraGrades = Object.keys(subjectGrades).filter(g => !standardGrades.includes(g));
+        const allDisplayGrades = [...standardGrades, ...extraGrades];
+
+        let subjGradesHtml = "";
+        allDisplayGrades.forEach(grade => {
+          const count = subjectGrades[grade] || 0;
+          if (count > 0) {
+            const pct = totalSubjectGrades > 0 ? ((count / totalSubjectGrades) * 100).toFixed(1) : "0.0";
+            
+            let colorClass = "grade-color-default";
+            if (grade === "O" || grade === "S") colorClass = "grade-color-premium";
+            else if (grade === "A+" || grade === "A") colorClass = "grade-color-success";
+            else if (grade === "B+" || grade === "B") colorClass = "grade-color-info";
+            else if (grade === "C" || grade === "D" || grade === "E") colorClass = "grade-color-warning";
+            else if (grade === "F" || grade === "Ab") colorClass = "grade-color-danger";
+
+            subjGradesHtml += `
+              <div class="subj-grade-card">
+                <span class="badge-grade ${colorClass}" style="width: 20px; height: 20px; font-size: 9px; min-width: 20px;">${grade}</span>
+                <span class="subj-grade-count">${count}<span class="subj-grade-label">qty</span></span>
+                <span class="subj-grade-pct">(${pct}%)</span>
+              </div>
+            `;
+          }
+        });
         
         tableRowsHtml += `
-          <tr>
-            <td style="font-weight: 600; color: var(--text-primary);">${subj.name}</td>
+          <tr class="subject-row" style="cursor: pointer;">
+            <td style="font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+              <span class="expand-icon" style="transition: transform 0.2s ease;">▶</span>
+              <span>${subj.name}</span>
+            </td>
             <td style="text-align: center; font-weight: 500;">${registered}</td>
             <td style="text-align: center; font-weight: 600; color: var(--success);">${passed}</td>
             <td style="text-align: center; font-weight: 600; color: ${failed > 0 ? 'var(--danger)' : 'var(--text-secondary)'};">${failed}</td>
             <td style="text-align: center; font-weight: 700;">
               <span class="${passBadgeClass}">${passPercent}</span>
+            </td>
+          </tr>
+          <tr class="subject-detail-row hidden">
+            <td colspan="5">
+              <div class="subject-grades-wrapper">
+                <div class="subject-grades-title">Grade Breakdown for ${subj.name}</div>
+                <div class="subject-grades-grid">
+                  ${subjGradesHtml || '<div style="color: var(--text-muted);">No grades recorded.</div>'}
+                </div>
+              </div>
             </td>
           </tr>
         `;
