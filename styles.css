@@ -2059,3 +2059,175 @@ header {
     border-color: #000000 !important;
   }
 }
+
+/* Grade Distribution Breakdown Styles */
+.grade-distribution-section {
+  background: var(--bg-app);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 18px 20px;
+  margin-bottom: 25px;
+  transition: background-color var(--transition-normal), border-color var(--transition-normal);
+}
+
+.grade-distribution-title {
+  font-family: var(--font-heading);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-top: 0;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.grade-distribution-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(115px, 1fr));
+  gap: 12px;
+}
+
+.grade-dist-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color var(--transition-normal);
+}
+
+.grade-dist-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.grade-dist-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.badge-grade {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  font-weight: 800;
+  font-size: 11px;
+}
+
+.grade-dist-count {
+  font-family: var(--font-heading);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.grade-dist-label {
+  font-size: 9px;
+  color: var(--text-muted);
+  font-weight: 400;
+  margin-left: 1px;
+}
+
+.grade-dist-progress-bg {
+  height: 5px;
+  background: var(--border-color);
+  border-radius: 3px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.grade-dist-progress-bar {
+  height: 100%;
+  border-radius: 3px;
+}
+
+.grade-dist-percentage {
+  font-size: 10px;
+  color: var(--text-secondary);
+  font-weight: 600;
+  align-self: flex-end;
+}
+
+/* Curated, harmonious colors for grades */
+.grade-color-premium {
+  background: rgba(139, 92, 246, 0.12);
+  color: #8b5cf6;
+}
+.grade-dist-progress-bar.grade-color-premium {
+  background: #8b5cf6;
+}
+
+.grade-color-success {
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+}
+.grade-dist-progress-bar.grade-color-success {
+  background: #10b981;
+}
+
+.grade-color-info {
+  background: rgba(59, 130, 246, 0.12);
+  color: #3b82f6;
+}
+.grade-dist-progress-bar.grade-color-info {
+  background: #3b82f6;
+}
+
+.grade-color-warning {
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+}
+.grade-dist-progress-bar.grade-color-warning {
+  background: #f59e0b;
+}
+
+.grade-color-danger {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+}
+.grade-dist-progress-bar.grade-color-danger {
+  background: #ef4444;
+}
+
+.grade-color-default {
+  background: rgba(107, 114, 128, 0.12);
+  color: #6b7280;
+}
+.grade-dist-progress-bar.grade-color-default {
+  background: #6b7280;
+}
+
+/* Print override for Grade Distribution Section */
+@media print {
+  .grade-distribution-section {
+    border: 1px solid #cbd5e1 !important;
+    background: #f8fafc !important;
+    padding: 12px 15px !important;
+    margin-bottom: 20px !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+  
+  .grade-distribution-grid {
+    grid-template-columns: repeat(6, 1fr) !important;
+    gap: 8px !important;
+  }
+  
+  .grade-dist-card {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    padding: 8px !important;
+    box-shadow: none !important;
+    transform: none !important;
+  }
+}
+

@@ -1357,6 +1357,71 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
       });
       
+      // Calculate grade counts across all subjects for this branch
+      const gradeCounts = {};
+      let totalGradesCount = 0;
+      branchStudents.forEach(student => {
+        Object.keys(student.subjects).forEach(subjName => {
+          const detail = student.subjects[subjName];
+          if (detail && detail.grade && detail.grade !== "-") {
+            const gr = detail.grade.toUpperCase();
+            let normGr = gr;
+            if (gr === "AB") normGr = "Ab";
+            gradeCounts[normGr] = (gradeCounts[normGr] || 0) + 1;
+            totalGradesCount++;
+          }
+        });
+      });
+
+      const standardGrades = ["O", "S", "A+", "A", "B+", "B", "C", "D", "E", "F", "Ab"];
+      const extraGrades = Object.keys(gradeCounts).filter(g => !standardGrades.includes(g));
+      const allDisplayGrades = [...standardGrades, ...extraGrades];
+
+      let gradeDistributionItemsHtml = "";
+      allDisplayGrades.forEach(grade => {
+        const count = gradeCounts[grade] || 0;
+        if (count > 0) {
+          const pct = totalGradesCount > 0 ? ((count / totalGradesCount) * 100).toFixed(1) : "0.0";
+          
+          let colorClass = "grade-color-default";
+          if (grade === "O" || grade === "S") colorClass = "grade-color-premium";
+          else if (grade === "A+" || grade === "A") colorClass = "grade-color-success";
+          else if (grade === "B+" || grade === "B") colorClass = "grade-color-info";
+          else if (grade === "C" || grade === "D" || grade === "E") colorClass = "grade-color-warning";
+          else if (grade === "F" || grade === "Ab") colorClass = "grade-color-danger";
+
+          gradeDistributionItemsHtml += `
+            <div class="grade-dist-card">
+              <div class="grade-dist-header">
+                <span class="badge-grade ${colorClass}">${grade}</span>
+                <span class="grade-dist-count">${count}<span class="grade-dist-label">qty</span></span>
+              </div>
+              <div class="grade-dist-progress-bg">
+                <div class="grade-dist-progress-bar ${colorClass}" style="width: ${pct}%;"></div>
+              </div>
+              <div class="grade-dist-percentage">${pct}%</div>
+            </div>
+          `;
+        }
+      });
+
+      let gradeDistributionSectionHtml = "";
+      if (gradeDistributionItemsHtml) {
+        gradeDistributionSectionHtml = `
+          <div class="grade-distribution-section">
+            <h4 class="grade-distribution-title">
+              <svg class="icon" viewBox="0 0 24 24" style="width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; vertical-align: text-bottom; margin-right: 4px;">
+                <path d="M12 20h9M3 20v-8a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v8M11 20v-13a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v13"></path>
+              </svg>
+              Overall Grade Distribution (All Subjects)
+            </h4>
+            <div class="grade-distribution-grid">
+              ${gradeDistributionItemsHtml}
+            </div>
+          </div>
+        `;
+      }
+      
       const cardHtml = `
         <div class="analytics-card" style="margin-bottom: 30px;">
           <div class="analytics-print-header">
@@ -1386,6 +1451,8 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
             ${svgChartHtml}
           </div>
+          
+          ${gradeDistributionSectionHtml}
 
           <table class="analytics-table">
             <thead>
